@@ -110,6 +110,11 @@ function with-pgparam(fn)
     pgrest_param_setobj delete param.pgparam
     fn param
 
+export pgrest_getauth = ->
+  throw "logged out " unless plv8.pgparam.auth?
+  plv8x.pgparam.auth.auth_id
+pgrest_getauth.$plv8x = '():int'
+
 export pgrest_select = with-pgparam (param) ->
     for p in <[l sk c]> | typeof param[p] is \string => param[p] = parseInt param[p]
     for p in <[q s f]>  | typeof param[p] is \string => param[p] = JSON.parse param[p]
