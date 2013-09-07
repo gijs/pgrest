@@ -90,7 +90,6 @@ export function cli(__opts, use, middleware, bootstrap, cb)
 
   {mount-default,mount-auth,with-prefix} = pgrest.routes!
 
-
   <- bootstrap plx
 
   process.exit 0 if opts.boot
@@ -120,7 +119,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
     app.use express.session secret: 'test'
     app.use passport.initialize!
     app.use passport.session!
-    mount-auth plx, app, middleware, opts
+    mount-auth plx, app, middleware, opts, pkg.mk-get-auth-user plx
 
   cols <- mount-default plx, opts.schema, with-prefix opts.prefix, (path, r) ->
     args = [path] ++ middleware ++ r

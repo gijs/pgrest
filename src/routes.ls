@@ -45,46 +45,11 @@ export function derive-type (content, type)
     return ((TypeMap[typeof! content.0] || \plv8x.json) + '[]') - /^plv8x\./
   TypeMap[typeof! content] || \plv8x.json
 
-export function mount-auth (plx, app, middleware, config, cb_after_auth, cb_logout)
+export function mount-auth (plx, app, middleware, config, cb_after_auth)
+  throw 'callback after auth is missing' unless cb_after_auth
+  
   passport.serializeUser (user, done) -> done null, user
   passport.deserializeUser (id, done) -> done null, id
-
-  default_cb_logout = (req, res) ->
-    console.log "user logout"
-    req.logout!
-    res.redirect config.auth.logout_redirect
-
-  default_cb_after_auth = (token, tokenSecret, profile, done) ->
-    <- plx.query """
-      CREATE TABLE IF NOT EXISTS users (
-        _id SERIAL UNIQUE,
-        provider_name TEXT NOT NULL,
-        provider_id TEXT NOT NULL,
-        username TEXT,
-        name JSON,
-        display_name TEXT,
-        emails JSON,
-        photos JSON,
-        tokens JSON
-    );
-    """
-    user = do
-      provider_name: profile.provider
-      provider_id: profile.id
-      username: profile.username
-      name: profile.name
-      emails: profile.emails
-      photos: profile.photos
-    console.log "user #{user.username} authzed by #{user.provider_name}.#{user.provider_id}"
-    #@FIXME: need to merge multiple authoziation profiles
-    param = [collection: \users, q:{provider_id:user.provider_id, provider_name:user.provider_name}]
-    [pgrest_select:res] <- plx.query "select pgrest_select($1)", param
-    if res.paging.count == 0
-      [pgrest_insert:res] <- plx.query "select pgrest_insert($1)", [collection: \users, $: [user]]
-    [pgrest_select:res] <- plx.query "select pgrest_select($1)", param
-    user.auth_id = res.entries[0]['_id']
-    console.log user
-    done null, user
 
   for provider_name in config.auth.plugins
     provider_cfg = config.auth.providers_settings[provider_name]
@@ -97,7 +62,7 @@ export function mount-auth (plx, app, middleware, config, cb_after_auth, cb_logo
                   case \google then "passport-google-oauth"
                   default "passport-#{provider_name}"
     _Strategy = require(module_name).Strategy
-    passport.use new _Strategy provider_cfg, if cb_after_auth? then cb_after_auth else default_cb_after_auth
+    passport.use new _Strategy provider_cfg, cb_after_auth
     # register auth endpoint
     app.get "/auth/#{provider_name}", (passport.authenticate "#{provider_name}", provider_cfg.scope)
     _auth = passport.authenticate "#{provider_name}", do
@@ -107,7 +72,9 @@ export function mount-auth (plx, app, middleware, config, cb_after_auth, cb_logo
 
   app.get "/loggedin", middleware, (req, res) ->
     if req.pgparam.auth? then res.send true else res.send false
-  app.get "/logout", middleware, if cb_logout? then cb_logout else default_cb_logout
+  app.get "/logout", middleware, (req, res) ->
+    req.logout!
+    res.redirect config.auth.logout_redirect
   app
 
 export function mount-model (plx, schema, name, _route=route)
