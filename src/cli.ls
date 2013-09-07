@@ -52,6 +52,7 @@ export function get-opts
     cors: argv.cors or false
     cookiename: argv.cookiename or cfg.cookiename or null
     app: argv.app or cfg.appname or null
+    argv: argv
 
 mk-pgparam = (enabled_auth, cookiename)->
   pgparam = (req, res, next) ->
@@ -85,7 +86,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
     else
       (_, cb) -> cb!
 
-  plx <- pgrest .new opts.conString, opts.meta
+  plx <- pgrest.new opts.conString, {opts.meta}
 
   {mount-default,mount-auth,with-prefix} = pgrest.routes!
 
