@@ -38,6 +38,7 @@ auth:
   enable: true
   success_redirect: "/"
   logout_redirect: "/"
+  failure_redirect: "/"
   # Actived auth plugins
   plugins: ['facebook']
   providers_settings:

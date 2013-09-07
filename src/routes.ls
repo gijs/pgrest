@@ -102,7 +102,7 @@ export function mount-auth (plx, app, middleware, config, cb_after_auth, cb_logo
     app.get "/auth/#{provider_name}", (passport.authenticate "#{provider_name}", provider_cfg.scope)
     _auth = passport.authenticate "#{provider_name}", do
       successRedirect: config.auth.success_redirect or '/'
-      failureRedirect: "/auth/#{provider_name}"
+      failureRedirect: config.auth.failure_redirect or "/"
     app.get "/auth/#{provider_name}/callback", _auth
 
   app.get "/loggedin", middleware, (req, res) ->
