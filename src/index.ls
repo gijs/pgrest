@@ -5,8 +5,13 @@ exports.new = (conString, config, cb) ->
     conString = "localhost/#conString" unless conString is // / //
     conString = "tcp://#conString"     unless conString is // :/ //
   plx <- plv8x.new conString
-  next <- plx.import-bundle-funcs \pgrest require.resolve(\../package.json)
-  <- next!
+  do-import = (cb) ->
+    next <- plx.import-bundle-funcs \pgrest require.resolve(\../package.json)
+    <- next!
+    cb!
+  if config.client
+    do-import = (cb) -> cb!
+  <- do-import
   plx.boot = (cb) -> plx.ap (-> plv8x.require \pgrest .boot), [config], cb
   plx.conn.on \error ->
     console.log \pgerror it
@@ -107,7 +112,8 @@ export cli = -> require \./cli .cli
 
 function with-pgparam(fn)
   (param) ->
-    pgrest_param_setobj delete param.pgparam
+    if param.pgparam
+      pgrest_param_setobj delete param.pgparam
     fn param
 
 export pgrest_getauth = ->
@@ -127,6 +133,10 @@ export pgrest_select = with-pgparam (param) ->
     id-column = pgrest.PrimaryFieldOf[meta?as ? collection]
     q[id-column] = delete q._id if q?_id and id-column
     cond = compile collection, q if q
+
+    if (collection / '.').length == 1
+      collection = "public.#{collection}"
+
     if pgrest.ColumnsOf[collection]
       columns = [].concat that
       if f
@@ -134,7 +144,7 @@ export pgrest_select = with-pgparam (param) ->
         if inclusive
           columns.=filter (f.)
         else
-          columns.=filter -> !f[it]? or f[it]
+          columns.=filter -> !f[it]? or f[it] == 1
     else
       columns = ['*']
 
@@ -262,12 +272,12 @@ pgrest_param.$plv8x = '():plv8x.json'
 
 export function pgrest_param_get(key)
   plv8x.pgparam[key]
-pgrest_param_get.$plv8x = '(varchar):plv8x.json'
+pgrest_param_get.$plv8x = '(text):text'
 
 export function pgrest_param_set(key, value)
   plv8x.pgparam[key] = value
   plv8x.pgparam
-pgrest_param_set.$plv8x = '(varchar,varchar):plv8x.json'
+pgrest_param_set.$plv8x = '(text,text):plv8x.json'
 
 export function pgrest_param_setobj(pgparam)
   plv8x.pgparam = pgparam

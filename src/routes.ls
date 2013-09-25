@@ -1,5 +1,4 @@
 require! trycatch
-require! passport
 
 export function route (path, fn)
   (req, resp) ->
@@ -45,9 +44,9 @@ export function derive-type (content, type)
     return ((TypeMap[typeof! content.0] || \plv8x.json) + '[]') - /^plv8x\./
   TypeMap[typeof! content] || \plv8x.json
 
-export function mount-auth (plx, app, middleware, config, cb_after_auth)
-  throw 'callback after auth is missing' unless cb_after_auth
-  
+export function mount-auth (plx, app, middleware, config, cb_after_auth, cb_logout)
+  require! passport
+
   passport.serializeUser (user, done) -> done null, user
   passport.deserializeUser (id, done) -> done null, id
 
