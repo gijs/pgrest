@@ -69,8 +69,9 @@ export function mount-auth (plx, app, middleware, config, cb_after_auth)
       failureRedirect: config.auth.failure_redirect or "/"
     app.get "/auth/#{provider_name}/callback", _auth
 
-  app.get "/loggedin", middleware, (req, res) ->
-    if req.pgparam.auth? then res.send true else res.send false
+  app.get '/loggedin', (req, res) ->
+    res.send req.isAuthenticated!
+
   app.get "/logout", middleware, (req, res) ->
     req.logout!
     res.redirect config.auth.logout_redirect
