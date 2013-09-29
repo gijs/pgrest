@@ -57,7 +57,8 @@ export function get-opts
     argv: argv
 
 mk-pgparam = (enabled_auth, cookiename)->
-  return null unless enabled_auth and cookiename?
+  if (not enabled_auth) and cookiename?
+    return null
   pgparam = (req, res, next) ->
     req.pgparam = {}
     if enabled_auth
@@ -111,8 +112,8 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   if opts.cors
     require! cors
     middleware.unshift cors!
-
-  pgparam_hanlder = mk-pgparam opts.auth.enable, opts.cookiename
+  
+  pgparam_handler = mk-pgparam opts.auth.enable, opts.cookiename
   if pgparam_handler
     middleware.push pgparam_handler
 
