@@ -117,8 +117,8 @@ function with-pgparam(fn)
     fn param
 
 export pgrest_getauth = ->
-  throw "logged out " unless plv8.pgparam.auth?
-  plv8.pgparam.auth.auth_id
+  throw "logged out " unless plv8x.pgparam.auth?
+  plv8x.pgparam.auth.auth_id
 pgrest_getauth.$plv8x = '():int'
 
 export pgrest_select = with-pgparam (param) ->
