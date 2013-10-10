@@ -9,6 +9,7 @@ exports.new = (conString, config, cb) ->
     next <- plx.import-bundle-funcs \pgrest require.resolve(\../package.json)
     <- next!
     cb!
+  plx.config = config
   if config.client
     do-import = (cb) -> cb!
   <- do-import
@@ -25,86 +26,7 @@ exports.new = (conString, config, cb) ->
   return cb plx if cb
   return plx.conn.end!
 
-q = -> """
-    '#{ "#it".replace /'/g "''" }'
-"""
-
-qq = ->
-    return it if it is '*'
-    it.replace /\.(\d+)/g -> "[#{ parseInt(RegExp.$1) + 1}]"
-      .replace /^([^.]*)/ -> "\"#{ RegExp.$1.replace /"/g '""' }\""
-
-walk = (model, meta) ->
-    return [] unless meta?[model]
-    for col, spec of meta[model]
-        [compile(model, spec), col]
-
-compile = (model, field) ->
-    {$query, $from, $and, $} = field ? {}
-    switch
-    | $from? => let from-table = qq "#{$from}", model-table = qq "#{model}"
-        """
-        (SELECT COALESCE(ARRAY_TO_JSON(ARRAY_AGG(_)), '[]') FROM (SELECT * FROM #from-table
-            WHERE #{ qq "_#model" } = #model-table."_id" AND #{
-                switch
-                | $query?                   => cond model, $query
-                | _                         => true
-            }
-        ) AS _)
-        """
-    | $? => cond model, $
-    | typeof field is \object => cond model, field
-    | _ => field
-
-cond = (model, spec) -> switch typeof spec
-    | \number => spec
-    | \string => qq spec
-    | \object =>
-        # Implicit AND on all k,v
-        ([ test model, qq(k), v for k, v of spec ].reduce (++)) * " AND "
-    | _ => it
-
-test = (model, key, expr) -> switch typeof expr
-    | <[ number boolean ]> => ["(#key = #expr)"]
-    | \string => ["(#key = #{ q expr })"]
-    | \object =>
-        unless expr?
-            return ["(#key IS NULL)"]
-        for op, ref of expr
-            switch op
-            | \$not =>
-                "(NOT #{test model, key, ref})"
-            | \$lt =>
-                res = evaluate model, ref
-                "(#key < #res)"
-            | \$gt =>
-                res = evaluate model, ref
-                "(#key > #res)"
-            | \$contains =>
-                ref = [ref] unless Array.isArray ref
-                res = q "{#{ref.join \,}}"
-                "(#key @> #res)"
-            | \$ => let model-table = qq "#{model}s"
-                "(#key = #model-table.#{ qq ref })"
-            | _ => throw "Unknown operator: #op"
-    | \undefined => [true]
-
-evaluate = (model, ref) -> switch typeof ref
-    | <[ number boolean ]> => "#ref"
-    | \string => q ref
-    | \object => for op, v of ref => switch op
-        | \$ => let model-table = qq "#{model}s"
-            "#model-table.#{ qq v }"
-        | \$ago => "'now'::timestamptz - #{ q "#v ms" }::interval"
-        | _ => continue
-
-order-by = (fields) ->
-    sort = for k, v of fields
-        "#{qq k} " + switch v
-        |  1 => \ASC
-        | -1 => \DESC
-        | _  => throw "unknown order type: #q #k"
-    sort * ", "
+{q,qq,compile,build_view_source,order-by} = require \./sql
 
 export routes = -> require \./routes
 export get-opts = -> require \./cli .get-opts
@@ -149,7 +71,7 @@ export pgrest_select = with-pgparam (param) ->
       columns = ['*']
 
     columns.push id-column if id-column
-    query = "SELECT #{columns.map qq .join \,} FROM #{ qq collection }"
+    query = "SELECT #{columns.map qq .join ", "} FROM #{ qq collection }"
 
     query += " WHERE #cond" if cond?
     [{count}] = plv8.execute "select count(*) from (#query) cnt"
@@ -308,6 +230,34 @@ export function boot(config)
 
     pgrest <<< { PrimaryFieldOf, ColumnsOf, config }
     return true
+
+require! async
+function build_rules(plx, cb)
+  allrules = for relation, {rules} of plx.config.meta when rules
+    for rule in rules => let {name, event, type, command} = rule
+      (done) ->
+        <- plx.query """
+          CREATE OR REPLACE RULE #{name} AS ON #{event} TO #{relation}
+            DO #{type} (#{command});
+        """, (err) -> console.log err
+        done!
+  <- async.waterfall allrules.reduce (++)
+  cb!
+
+function build_views(plx, cb)
+  views = for name, {as}:meta of plx.config.meta when as => let name
+    source = build_view_source meta
+    (done) ->
+      <- plx.query """CREATE OR REPLACE view #name AS #source;""" -> console.log \err it
+      done!
+  err <- async.waterfall views
+  cb!
+
+export function bootstrap(plx, name, pkg, cb)
+  next <- plx.import-bundle-funcs name, pkg
+  <- build_views plx
+  next -> build_rules plx, -> cb!
+
 export pgrest_boot = boot
 pgrest_boot.$plv8x = '(plv8x.json):boolean'
 pgrest_boot.$bootstrap = true
