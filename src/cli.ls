@@ -19,6 +19,8 @@ ensured-opts = ->
   it
 
 export function get-opts
+  parse_pluginargv = ->
+    it / \:
   {argv} = require \optimist
   if argv.version
     {version} = require require.resolve \../package.json
@@ -55,6 +57,7 @@ export function get-opts
     cookiename: argv.cookiename or cfg.cookiename or null
     app: argv.app or cfg.appname or null
     argv: argv
+    actived_plugins: parse_pluginargv argv.actived_plugins or cfg.actived_plugins or []
 
 mk-pgparam = (enabled_auth, cookiename)->
   pgparam = (req, res, next) ->
@@ -115,7 +118,10 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   if opts.cookiename
     middleware.push mk-pgparam opts.auth.enable, opts.cookiename
 
-  # @TODO: load plugins.
+  if opts.actived_plugins
+    for plugin in pgrest.lookup-plugins opt.actived_plugins
+      if plugin.routing_hook?
+        plugin.routing_hook plx, app, middleware, opts
 
   cols <- mount-default plx, opts.schema, with-prefix opts.prefix, (path, r) ->
     args = [path] ++ middleware ++ r

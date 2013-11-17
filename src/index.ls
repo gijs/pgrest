@@ -31,6 +31,7 @@ exports.new = (conString, config, cb) ->
 
 export routes = -> require \./routes
 export get-opts = -> require \./cli .get-opts
+export lookup-plugins = -> require \./plugin .lookup-plugins
 export cli = -> require \./cli .cli
 
 function with-pgparam(fn)
