@@ -36,8 +36,3 @@ devDependencies:
   supertest: \0.7.x
   chai: \*
   LiveScript: \1.1.x
-optionalDependencies:
-  passport: \0.1.x
-  'passport-facebook': \1.0.x
-  'passport-twitter': \1.0.x
-  'passport-google-oauth': \0.1.x
