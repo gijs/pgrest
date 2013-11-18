@@ -119,8 +119,8 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   if opts.cookiename
     middleware.push mk-pgparam opts.auth.enable, opts.cookiename
 
-  if opts.actived_plugins
-    for plugin in pgrest.lookup-plugins opt.actived_plugins
+  if opts.actived_plugins.length >= 1
+    for plugin in pgrest.lookup-plugins opts.actived_plugins
       if plugin.routing_hook?
         plugin.routing_hook plx, app, middleware, opts
 
