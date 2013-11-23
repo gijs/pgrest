@@ -94,7 +94,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
 
   plx <- pgrest.new opts.conString, {opts.meta}
 
-  {mount-default,mount-auth,with-prefix} = pgrest.routes!
+  {mount-default, with-prefix} = pgrest.routes!
 
 
   <- bootstrap plx
