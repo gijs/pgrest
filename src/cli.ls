@@ -60,17 +60,9 @@ export function get-opts
     argv: argv
     actived_plugins: parse_pluginargv argv.actived_plugins or cfg.actived_plugins or []
 
-mk-pgparam = (enabled_auth, cookiename)->
+mk-pgparam = (cookiename)->
   pgparam = (req, res, next) ->
     req.pgparam = {}
-    if enabled_auth
-      if req.isAuthenticated!
-        winston.info "#{req.path} user is authzed. init db sesion"
-        req.pgparam.auth = req.user
-      else
-        winston.info "#{req.path} user is not authzed. reset db session"
-        req.pgparam = {}
-
     if cookiename?
       req.pgparam.session = req.cookies[cookiename]
     next!
@@ -120,9 +112,9 @@ export function cli(__opts, use, middleware, bootstrap, cb)
     middleware.unshift cors!
 
   if opts.cookiename
-    middleware.push mk-pgparam opts.auth.enable, opts.cookiename
+    middleware.push mk-pgparam opts.cookiename
 
-  pgrest.try-invoke! plugins, \prehook-pgrest-mount-default, opts, plx, app, middleware
+  plx, app, middleware = pgrest.try-invoke! plugins, \prehook-pgrest-mount-default, opts, plx, app, middleware
   cols <- mount-default plx, opts.schema, with-prefix opts.prefix, (path, r) ->
     args = [path] ++ middleware ++ r
     app.all ...args
