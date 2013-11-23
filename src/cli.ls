@@ -81,7 +81,8 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   if !Object.keys __opts .length
     __opts = get-opts!
   opts = ensured-opts __opts
-
+  plugins = pgrest.lookup-plugins! opts.actived_plugins
+  winston.info "Loaded plugins: #plugins"
   #@FIXME: not test yet.
   if not bootstrap? and opts.app?
     bootstrap = require opts.app
@@ -93,6 +94,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
       (_, cb) -> cb!
 
   plx <- pgrest.new opts.conString, {opts.meta}
+  pgrest.try-invoke! plugins, \posthook-pgrest-create-plx, opts, plx
 
   {mount-default, with-prefix} = pgrest.routes!
 
@@ -104,6 +106,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   express = try require \express
   throw "express required for starting server" unless express
   app = express!
+  pgrest.try-invoke! plugins, \posthook-express-create-app, opts, app
 
   app.use express.json!
   for p in use
@@ -119,16 +122,13 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   if opts.cookiename
     middleware.push mk-pgparam opts.auth.enable, opts.cookiename
 
-  if opts.actived_plugins.length >= 1
-    for plugin in pgrest.lookup-plugins opts.actived_plugins
-      if plugin.routing_hook?
-        plugin.routing_hook plx, app, middleware, opts
-
+  pgrest.try-invoke! plugins, \prehook-pgrest-mount-default, opts, plx, app, middleware
   cols <- mount-default plx, opts.schema, with-prefix opts.prefix, (path, r) ->
     args = [path] ++ middleware ++ r
     app.all ...args
 
   server = http.createServer app
+  pgrest.try-invoke! plugins, \posthook-pgrest-prepare-cli, opts, plx, app, server
   <- server.listen opts.port, opts.host, 511
   winston.info "Available collections:\n#{ cols.sort! * ' ' }"
   winston.info "Serving `#{opts.conString}` on http://#{opts.host}:#{opts.port}#{opts.prefix}"
