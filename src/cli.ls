@@ -114,7 +114,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   if opts.cookiename
     middleware.push mk-pgparam opts.cookiename
 
-  plx, app, middleware = pgrest.try-invoke! plugins, \prehook-pgrest-mount-default, opts, plx, app, middleware
+  pgrest.try-invoke! plugins, \prehook-pgrest-mount-default, opts, plx, app, middleware
   cols <- mount-default plx, opts.schema, with-prefix opts.prefix, (path, r) ->
     args = [path] ++ middleware ++ r
     app.all ...args
