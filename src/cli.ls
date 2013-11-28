@@ -19,9 +19,6 @@ ensured-opts = ->
   it
 
 export function get-opts
-  parse_pluginargv = ->
-    if it
-      it /  \:
   {argv} = require \optimist
   if argv.version
     {version} = require require.resolve \../package.json
