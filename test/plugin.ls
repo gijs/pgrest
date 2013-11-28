@@ -13,10 +13,16 @@ describe 'Plugin Handler', ->
   beforeEach (done) ->
     called : false
     done!
+  describe 'use()', -> ``it``
+    .. 'should be able to modify a global varialble used.', (done) ->
+      pgrest.use.should.be.ok
+      pgrest.use "pgrestfs"
+      pgrest.used.0 .should.be.eq "pgrestfs"
+      done!
   describe 'has a function to require plugins', ->  ``it``
     .. 'should catch invalde plugin name', (done) ->
       (-> pgrest.lookup-plugins! <[fs]>)
-        .should.throw
+        .should.throw "invalid plugin name: fs"
       done!
   describe 'has a function to call hooks if plugins provide.', ->  ``it``
     .. 'should catch invalde hook name.', (done) ->

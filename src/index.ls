@@ -1,4 +1,10 @@
 require! plv8x
+
+export used = []
+
+export function use(plugin)
+  used.push plugin
+
 exports.new = (conString, config, cb) ->
   throw "Expected: new(dsn, cb) where dsn is 'db', 'host/db' or 'tcp://host/db'" unless conString
   if typeof conString is \string

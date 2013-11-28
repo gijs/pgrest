@@ -58,7 +58,6 @@ export function get-opts
     cookiename: argv.cookiename or cfg.cookiename or null
     app: argv.app or cfg.appname or null
     argv: argv
-    actived_plugins: parse_pluginargv argv.actived_plugins or cfg.actived_plugins or []
 
 mk-pgparam = (cookiename)->
   pgparam = (req, res, next) ->
@@ -73,7 +72,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   if !Object.keys __opts .length
     __opts = get-opts!
   opts = ensured-opts __opts
-  plugins = pgrest.lookup-plugins! opts.actived_plugins
+  plugins = pgrest.lookup-plugins!
   winston.info "Loaded plugins: #plugins"
   #@FIXME: not test yet.
   if not bootstrap? and opts.app?
