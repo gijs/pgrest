@@ -69,7 +69,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   if !Object.keys __opts .length
     __opts = get-opts!
   opts = ensured-opts __opts
-  plugins = pgrest.lookup-plugins!
+  plugins = pgrest.used
   winston.info "Loaded plugins: #plugins"
   #@FIXME: not test yet.
   if not bootstrap? and opts.app?
