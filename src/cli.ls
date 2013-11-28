@@ -71,6 +71,7 @@ export function cli(__opts, use, middleware, bootstrap, cb)
   opts = ensured-opts __opts
   plugins = pgrest.used
   winston.info "Loaded plugins: #plugins"
+  pgrest.try-invoke! plugins, \boot, opts
   #@FIXME: not test yet.
   if not bootstrap? and opts.app?
     bootstrap = require opts.app
